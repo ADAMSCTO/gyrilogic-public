@@ -104,6 +104,13 @@ export default function Page() {
 
   // Version info
   const [versionInfo, setVersionInfo] = useState<string>("");
+  const [licenseKey, setLicenseKey] = useState<string | null>(null);
+  const isPro = Boolean(licenseKey);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setLicenseKey(window.localStorage.getItem("gl_license"));
+    }
+  }, []);
 
   // ---------- Parental Control ----------
   const [pcEnabled, setPcEnabled] = useState<boolean>(true);
@@ -166,6 +173,14 @@ export default function Page() {
     } catch {
       // ignore
     }
+  }, []);
+  const onSetLicenseKey = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const k = window.prompt("Enter Gyrilogic access key:")?.trim() || "";
+    if (!k) return;
+    window.localStorage.setItem("gl_license", k);
+    setLicenseKey(k);
+    alert("Access key saved. Pro features unlocked.");
   }, []);
 
   // === CONTINUES... (UI, buttons, enhance handler, watermark, footer)
@@ -303,6 +318,11 @@ export default function Page() {
     setErrorMsg(null);
     setOutput("");
     setLastDuration(null);
+    if (!isPro && text.length > 400) {
+      setErrorMsg("Free tier limit is 400 characters. Use Access → Enter key to unlock more.");
+      setLoading(false);
+      return;
+    }
     try {
       const body = {
         text,
@@ -317,7 +337,14 @@ export default function Page() {
       };
       const r = await fetch(`${API}/enhance`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: (() => {
+  const h: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-GL-App": "gyrilogic-public",
+  };
+  if (licenseKey) h["X-GL-Key"] = licenseKey;
+  return h;
+})(),
         body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -330,7 +357,7 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
-  }, [text, ratingCode, tone, culture]);
+  }, [text, ratingCode, tone, culture, licenseKey, isPro]);
 
   const canRun = text.trim().length > 0 && !loading;
 
@@ -349,10 +376,21 @@ export default function Page() {
       <header className="w-full border-b bg-white">
         <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
           <div className="text-xl font-semibold">Gyrilogic</div>
-          <div className="text-xs opacity-70">
-            {versionInfo ? `Powered by ${versionInfo}` : "Powered by DHLL"}
-            {lastDuration != null ? ` · Response in ${lastDuration}ms` : ""}
-          </div>
+            <div className="flex items-center gap-3">
+    <div className="text-xs opacity-70">
+      {versionInfo ? `Powered by ${versionInfo}` : "Powered by DHLL"}
+      {lastDuration != null ? ` · ${lastDuration}ms` : ""}
+      {isPro ? " · Pro" : " · Free"}
+    </div>
+    <button
+      type="button"
+      onClick={onSetLicenseKey}
+      className="rounded-lg border px-3 py-1.5 text-sm hover:bg-neutral-50"
+      title={isPro ? "Update access key" : "Enter access key"}
+    >
+      Access
+    </button>
+  </div>
         </div>
       </header>
 
