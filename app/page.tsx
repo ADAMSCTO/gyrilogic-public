@@ -334,6 +334,11 @@ export default function Page() {
           tone,
           culture,
         },
+        // Fallback for environments where custom headers are blocked by CORS
+        meta: {
+          app: "gyrilogic-public",
+          license_key: licenseKey || undefined,
+        },
       };
       const r = await fetch(`${API}/enhance`, {
         method: "POST",
