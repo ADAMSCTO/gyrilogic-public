@@ -1,10 +1,19 @@
+import React from 'react';
+import Image from 'next/image';
+
 export default function About() {
   return (
     <>
       {/* HEADER-BLOCK-START */}
       <div style={{maxWidth:1100, margin:'24px auto 8px', padding:16, fontFamily:'Inter,system-ui,Arial,sans-serif'}}>
         <div style={{display:'flex', alignItems:'center', gap:12}}>
-          <img src="/gyrilogic-logo.png" alt="Gyrilogic logo" style={{ width: 160, maxWidth: '40vw', height: 'auto', borderRadius: 8 }} />
+          <Image
+            src="/gyrilogic-logo.png"
+            alt="Gyrilogic logo"
+            width={160}
+            height={160} // Adjust height as needed
+            style={{borderRadius: 8}}
+          />
           <h1 style={{margin:0, color:'#0b1220'}}>Gyrilogic — Default Human Logic Layer (Public)</h1>
         </div>
 
