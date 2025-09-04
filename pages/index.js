@@ -1,6 +1,7 @@
-
 // ANCHOR: DHLL-APP-FILE — CLEANED
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 function getAPI(){
   if (typeof window !== 'undefined') {
@@ -390,31 +391,31 @@ export default function Home(){
     URL.revokeObjectURL(url);
   }
 
-async function downloadAudit(){
-  try{
-    // start with what's currently in memory (session + any merged server)
-    let data = Array.isArray(audit) ? audit : [];
-
-    // optionally fetch latest from server and merge
+  async function downloadAudit(){
     try{
-      const r = await fetch(`${getAPI()}/audit/log?limit=100`);
-      if(r.ok){
-        const json = await r.json();
-        const server = json.items || json || [];
-        data = uniqByStringify([...(data||[]), ...server]);
-      }
-    }catch(_){ /* ignore network issues for download */ }
+      // start with what's currently in memory (session + any merged server)
+      let data = Array.isArray(audit) ? audit : [];
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const ts = new Date();
-    const pad = (n)=>String(n).padStart(2,'0');
-    const filename = `dhll_audit_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  }catch(e){ setError(e.message||'Audit download error'); }
-}
+      // optionally fetch latest from server and merge
+      try{
+        const r = await fetch(`${getAPI()}/audit/log?limit=100`);
+        if(r.ok){
+          const json = await r.json();
+          const server = json.items || json || [];
+          data = uniqByStringify([...(data||[]), ...server]);
+        }
+      }catch(_){ /* ignore network issues for download */ }
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const ts = new Date();
+      const pad = (n)=>String(n).padStart(2,'0');
+      const filename = `dhll_audit_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }catch(e){ setError(e.message||'Audit download error'); }
+  }
 
   function resetAll(){
     setText(''); setMode('full'); setPolicyMode('advisory'); setTone('neutral');
@@ -478,23 +479,96 @@ async function downloadAudit(){
     <div style={{maxWidth:1100,margin:'40px auto',padding:16,fontFamily:'Inter,system-ui,Arial,sans-serif'}}>
       {/* ANCHOR: HEADER-WITH-LOGO-START */}
 <div style={{display:'flex', alignItems:'center', gap:12}}>
-  <img src="/gyrilogic-logo.png" alt="Gyrilogic logo" style={{ width: 160, maxWidth: '40vw', height: 'auto', borderRadius: 8 }} />
+  <Image
+    src="/gyrilogic-logo.png"
+    alt="Gyrilogic logo"
+    width={160}
+    height={64}
+    style={{ borderRadius: 8, height: 'auto', width: 'auto', maxWidth: '40vw' }}
+    priority
+  />
   <h1 style={{margin:0}}>Gyrilogic — Default Human Logic Layer (Public)</h1>
 </div>
-{/* ANCHOR: HEADER-WITH-LOGO-END */}
-<div style={{display:'flex', gap:12, marginTop:8, marginBottom:12}}>
-  <button style={{padding:'6px 12px', borderRadius:8, border:'1px solid var(--gyr-border)', color:'var(--gyr-fg)', background:'transparent'}} onClick={()=>alert('Access panel TBD')}>
 
+<div style={{display:'flex', gap:12, marginTop:8, marginBottom:12}}>
+  <button
+    style={{
+      padding:'6px 12px',
+      borderRadius:8,
+      border:'1px solid var(--gyr-border)',
+      color:'var(--gyr-fg)',
+      background:'transparent'
+    }}
+    onClick={()=>alert('Access panel TBD')}
+  >
     Access
   </button>
-  <button style={{padding:'6px 12px', borderRadius:8, border:'1px solid var(--gyr-border)', color:'var(--gyr-fg)', background:'transparent'}} onClick={()=>alert('API panel TBD')}>
+
+  <button
+    style={{
+      padding:'6px 12px',
+      borderRadius:8,
+      border:'1px solid var(--gyr-border)',
+      color:'var(--gyr-fg)',
+      background:'transparent'
+    }}
+    onClick={()=>alert('API panel TBD')}
+  >
     API
   </button>
-  <span style={{padding:'6px 12px', borderRadius:8, background:'#e5fbe5', color:'#065f46', fontWeight:600}}>
+
+  {/* NAV-LINK-HOME-START */}
+  <Link
+    href="/"
+    style={{
+      padding:'6px 12px',
+      borderRadius:8,
+      border:'1px solid var(--gyr-border)',
+      color:'var(--gyr-fg)',
+      background:'transparent',
+      textDecoration:'none',
+      cursor:'pointer'
+    }}
+    onMouseOver={e => e.currentTarget.style.background = '#1e293b'}
+    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+  >
+    Home
+  </Link>
+  {/* NAV-LINK-HOME-END */}
+
+  {/* NAV-LINK-ABOUT-START */}
+  <Link
+    href="/about"
+    style={{
+      padding:'6px 12px',
+      borderRadius:8,
+      border:'1px solid var(--gyr-border)',
+      color:'var(--gyr-fg)',
+      background:'transparent',
+      textDecoration:'none',
+      cursor:'pointer'
+    }}
+    onMouseOver={e => e.currentTarget.style.background = '#1e293b'}
+    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+  >
+    About
+  </Link>
+  {/* NAV-LINK-ABOUT-END */}
+
+  <span
+    style={{
+      padding:'6px 12px',
+      borderRadius:8,
+      background:'#e5fbe5',
+      color:'#065f46',
+      fontWeight:600
+    }}
+  >
     Free Mode ●
   </span>
   {/* Later this can toggle to Pro and show green dot when active */}
 </div>
+{/* ANCHOR: HEADER-WITH-LOGO-END */}
 
       <p style={{ margin:'8px 0 12px', opacity:0.85 }}>
   For quick demos. <span style={{opacity:0.7}}>No login required.</span>
@@ -510,7 +584,7 @@ async function downloadAudit(){
   borderRadius:12,
   padding:16,
   boxShadow:'0 1px 2px rgba(0,0,0,0.04)',
-  overflow:'hidden'            // prevents child overlap with rounded corners
+  overflow:'hidden'
 }}>
   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
     <h3 style={{margin:0}}>Input</h3>
@@ -526,7 +600,7 @@ async function downloadAudit(){
     style={{
       width:'100%',
       display:'block',
-      boxSizing:'border-box',   // ensures padding/border don't overflow the card
+      boxSizing:'border-box',
       background:'#fff',
       border:'1px solid #d1d5db',
       borderRadius:10,
@@ -536,7 +610,6 @@ async function downloadAudit(){
       outline:'none'
     }}
   />
-  {/* Inner Enhance button removed on purpose */}
 </div>
 {/* END GYRILOGIC INPUT CARD */}
 
@@ -620,41 +693,39 @@ async function downloadAudit(){
         </div>
 
         <div style={{display:'flex',gap:10,alignItems:'center'}}>
-  <button onClick={runEnhance} disabled={loading} style={{padding:'10px 16px'}}>
-    {loading ? 'Running…' : 'Enhance'}
-  </button>
-  <button onClick={()=>setText('')} disabled={loading} style={{padding:'8px 12px'}}>
-    Clear
-  </button>
-</div>
+          <button onClick={runEnhance} disabled={loading} style={{padding:'10px 16px'}}>
+            {loading ? 'Running…' : 'Enhance'}
+          </button>
+          <button onClick={()=>setText('')} disabled={loading} style={{padding:'8px 12px'}}>
+            Clear
+          </button>
+        </div>
       </section>
 
       {error && <p style={{color:'crimson'}}>Error: {error}</p>}
 
       <section style={{display:'grid',gridTemplateColumns:'1fr',gap:16,marginTop:24}}>
-{/* BEGIN GYRILOGIC RESULT CARD */}
-<div className="gyri-card" style={{background:'#fff', border:'1px solid #e5e7eb', borderRadius:12, padding:16, boxShadow:'0 1px 2px rgba(0,0,0,0.04)'}}>
-  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8, marginBottom:8}}>
-    <h3 style={{margin:0}}>Result</h3>
-    <button onClick={copyEnhanced} disabled={!enhanced} style={{padding:'6px 10px'}}>
-      Copy
-    </button>
-  </div>
-  <div style={{whiteSpace:'pre-wrap', minHeight:120, color:'#111827'}}>
-    {enhanced ? (enhanced.enriched || '') : 'applied Default Human Logic Layer result.'}
-  </div>
-</div>
-{/* END GYRILOGIC RESULT CARD */}
-
+        {/* BEGIN GYRILOGIC RESULT CARD */}
+        <div className="gyri-card" style={{background:'#fff', border:'1px solid #e5e7eb', borderRadius:12, padding:16, boxShadow:'0 1px 2px rgba(0,0,0,0.04)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8, marginBottom:8}}>
+            <h3 style={{margin:0}}>Result</h3>
+            <button onClick={copyEnhanced} disabled={!enhanced} style={{padding:'6px 10px'}}>
+              Copy
+            </button>
+          </div>
+          <div style={{whiteSpace:'pre-wrap', minHeight:120, color:'#111827'}}>
+            {enhanced ? (enhanced.enriched || '') : 'applied Default Human Logic Layer result.'}
+          </div>
+        </div>
+        {/* END GYRILOGIC RESULT CARD */}
       </section>
 
       <footer style={{marginTop:24, textAlign:'center', opacity:0.85}}>
-  <div>For general audiences. <b>Safety first.</b></div>
-  <div style={{marginTop:4}}>Powered by Gyrilogic</div>
-</footer>
+        <div>For general audiences. <b>Safety first.</b></div>
+        <div style={{marginTop:4}}>Powered by Gyrilogic</div>
+      </footer>
     </div>
   </> );
 }
 
 // ANCHOR: END DHLL-APP-FILE — CLEANED
-

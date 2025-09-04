@@ -1,4 +1,4 @@
-import React from 'react';
+import Link from 'next/link';
 import Image from 'next/image';
 
 export default function About() {
@@ -11,15 +11,16 @@ export default function About() {
             src="/gyrilogic-logo.png"
             alt="Gyrilogic logo"
             width={160}
-            height={160} // Adjust height as needed
-            style={{borderRadius: 8}}
+            height={64}
+            priority
+            style={{ borderRadius: 8, height: 'auto', width: 'auto', maxWidth: '40vw' }}
           />
           <h1 style={{margin:0, color:'#0b1220'}}>Gyrilogic — Default Human Logic Layer (Public)</h1>
         </div>
 
         <div style={{display:'flex', gap:12, marginTop:8, marginBottom:12}}>
           {/* NAV-LINK-HOME-START */}
-          <a
+          <Link
             href="/"
             style={{
               padding:'6px 12px',
@@ -34,11 +35,11 @@ export default function About() {
             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
           >
             Home
-          </a>
+          </Link>
           {/* NAV-LINK-HOME-END */}
 
           {/* NAV-LINK-ABOUT-START */}
-          <a
+          <Link
             href="/about"
             style={{
               padding:'6px 12px',
@@ -53,7 +54,7 @@ export default function About() {
             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
           >
             About
-          </a>
+          </Link>
           {/* NAV-LINK-ABOUT-END */}
         </div>
       </div>
