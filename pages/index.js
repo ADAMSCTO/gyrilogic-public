@@ -1,7 +1,7 @@
 // ANCHOR: DHLL-APP-FILE — CLEANED
 import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import Head from 'next/head';
+import Header from '../components/Header';
 
 function getAPI(){
   if (typeof window !== 'undefined') {
@@ -71,7 +71,6 @@ const CULTURE_GROUPS = {
     {label:'Indonesia', value:'id'}
   ]
 };
-const CULTURE_FLAT = [{label:'None', value:'NONE'}, ...Object.values(CULTURE_GROUPS).flat()];
 
 // Circumstances groups → environment tags array
 const CIRCUMSTANCE_GROUPS = [
@@ -150,7 +149,6 @@ const KEYWORD_MAP = {
 };
 
 function uniq(arr){ return Array.from(new Set(arr)); }
-function shellEscapeSingleQuotes(s){ return String(s).replace(/'/g, "'\\''"); }
 // --- Session audit helpers ---
 function persistAudit(next){ try{ localStorage.setItem('dhll_session_audit', JSON.stringify(next)); }catch{} }
 function loadAuditFromStorage(){ try{ const s = localStorage.getItem('dhll_session_audit'); return s ? JSON.parse(s) : []; }catch{ return []; } }
@@ -198,17 +196,11 @@ export default function Home(){
   const [circumstances,setCircumstances]=useState([]);
   const [autoDetect,setAutoDetect]=useState(true);
 
-  const [loading,setLoading]=useState(false);
-  const [enhanced,setEnhanced]=useState(null);
-  const [policy,setPolicy]=useState(null);
-  const [audit,setAudit]=useState([]);
-  const [error,setError]=useState(null);
-  const [copied,setCopied]=useState(false);
-  const [copiedTags,setCopiedTags]=useState(false);
-  const [copiedAll,setCopiedAll]=useState(false);
-  const [copiedCurl,setCopiedCurl]=useState(false);
-  const [copiedPolicyCurl,setCopiedPolicyCurl]=useState(false);
-  const [copiedAuditCurl,setCopiedAuditCurl]=useState(false); // NEW
+const [loading,setLoading]=useState(false);
+const [enhanced,setEnhanced]=useState(null);
+const [, setPolicy] = useState(null);
+const [, setAudit] = useState([]);
+const [error,setError]=useState(null);
 
   const options = useMemo(()=>({ tone, environment: circumstances, dhll_mode: mode }),[tone, circumstances, mode]);
 
@@ -231,8 +223,6 @@ export default function Home(){
 
   async function runEnhance(){
     setLoading(true); setError(null);
-    setCopied(false); setCopiedTags(false); setCopiedAll(false);
-    setCopiedCurl(false); setCopiedPolicyCurl(false); setCopiedAuditCurl(false);
     try{
       // 1) Enhance
       const r = await fetch(`${getAPI()}/enhance`, {
@@ -271,7 +261,7 @@ export default function Home(){
             notes: `policy_http_${rp.status}`
           };
         }
-      }catch(_){
+      }catch{
         policyObj = {
           action: norm.policy_result.allowed ? 'allow' : 'block',
           policy_mode: norm.policy_result.mode || policyMode,
@@ -305,125 +295,12 @@ export default function Home(){
     }catch(e){ setError(e.message||'Audit error'); }
   }
 
-  function clearAudit(){
-    setAudit([]);
-    try{ localStorage.removeItem('dhll_session_audit'); }catch{}
-  }
-
   async function copyEnhanced(){
-    if(!enhanced) return;
-    try{
-      await navigator.clipboard.writeText(enhanced.enriched || '');
-      setCopied(true); setTimeout(()=>setCopied(false),1500);
-    }catch{ alert('Copy failed'); }
-  }
-
-  async function copyTags(){
-    if(!enhanced || !enhanced.tags) return;
-    try{
-      await navigator.clipboard.writeText(JSON.stringify(enhanced.tags, null, 2));
-      setCopiedTags(true); setTimeout(()=>setCopiedTags(false),1500);
-    }catch{ alert('Copy failed'); }
-  }
-
-  async function copyAll(){
-    if(!enhanced) return;
-    const payload = {
-      enriched: enhanced.enriched || '',
-      tags: enhanced.tags || {},
-      policy: policy ? { action: policy.action, policy_mode: policy.policy_mode, notes: policy.notes } : {}
-    };
-    try{
-      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-      setCopiedAll(true); setTimeout(()=>setCopiedAll(false),1500);
-    }catch{ alert('Copy failed'); }
-  }
-
-  // >>> BEGIN CURL HELPERS
-  async function copyCurl(){
-    try{
-      const payload = {
-        text: text || "Rainy   night   outdoor   party!!!",
-        mode: policyMode,
-        culture,
-        options
-      };
-      const json = JSON.stringify(payload);
-      const cmd = `curl -s '${getAPI()}/enhance' -X POST -H 'Content-Type: application/json' -d '${shellEscapeSingleQuotes(json)}'`;
-      await navigator.clipboard.writeText(cmd);
-      setCopiedCurl(true); setTimeout(()=>setCopiedCurl(false), 1500);
-    }catch(e){
-      setError('Failed to copy cURL: ' + String(e));
-    }
-  }
-
-  async function copyPolicyCurl(){
-    try{
-      const payload = { text: text || "Rainy   night   outdoor   party!!!", mode: policyMode };
-      const json = JSON.stringify(payload);
-      const cmd = `curl -s '${getAPI()}/policy/apply' -X POST -H 'Content-Type: application/json' -d '${shellEscapeSingleQuotes(json)}'`;
-      await navigator.clipboard.writeText(cmd);
-      setCopiedPolicyCurl(true); setTimeout(()=>setCopiedPolicyCurl(false), 1500);
-    }catch(e){
-      setError('Failed to copy cURL: ' + String(e));
-    }
-  }
-
-  async function copyAuditCurl(){
-    try{
-      const cmd = `curl -s '${getAPI()}/audit/log?limit=50'`;
-      await navigator.clipboard.writeText(cmd);
-      setCopiedAuditCurl(true); setTimeout(()=>setCopiedAuditCurl(false), 1500);
-    }catch(e){ setError('Failed to copy cURL: ' + String(e)); }
-  }
-  // >>> END CURL HELPERS
-
-  function downloadJSON(){
-    if(!enhanced) return;
-    const payload = { enriched: enhanced.enriched || '', tags: enhanced.tags || {} };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const ts = new Date();
-    const pad = (n)=>String(n).padStart(2,'0');
-    const filename = `dhll_enhanced_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  async function downloadAudit(){
-    try{
-      // start with what's currently in memory (session + any merged server)
-      let data = Array.isArray(audit) ? audit : [];
-
-      // optionally fetch latest from server and merge
-      try{
-        const r = await fetch(`${getAPI()}/audit/log?limit=100`);
-        if(r.ok){
-          const json = await r.json();
-          const server = json.items || json || [];
-          data = uniqByStringify([...(data||[]), ...server]);
-        }
-      }catch(_){ /* ignore network issues for download */ }
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const ts = new Date();
-      const pad = (n)=>String(n).padStart(2,'0');
-      const filename = `dhll_audit_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    }catch(e){ setError(e.message||'Audit download error'); }
-  }
-
-  function resetAll(){
-    setText(''); setMode('full'); setPolicyMode('advisory'); setTone('neutral');
-    setCultureQuery(''); setCulture('NONE'); setCircumstances([]); setAutoDetect(true);
-    setEnhanced(null); setPolicy(null); setAudit([]); setError(null);
-    setCopied(false); setCopiedTags(false); setCopiedAll(false);
-    setCopiedCurl(false); setCopiedPolicyCurl(false); setCopiedAuditCurl(false);
-  }
+  if(!enhanced) return;
+  try{
+    await navigator.clipboard.writeText(enhanced.enriched || '');
+  }catch{ alert('Copy failed'); }
+}
 
   function onTextKeyDown(e){
     if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){ e.preventDefault(); runEnhance(); }
@@ -476,99 +353,28 @@ export default function Home(){
 }
 `}</style>
 {/* ANCHOR: GYRI-NAVY-THEME-END */}
+<Head>
+  <title>Gyrilogic — Default Human Logic Layer</title>
+  <meta name="description" content="Gyrilogic applies the Default Human Logic Layer (DHLL) to make AI outputs emotionally realistic, culturally aware, and scene-coherent." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b2149" />
+
+  {/* OpenGraph */}
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Gyrilogic — Default Human Logic Layer" />
+  <meta property="og:description" content="Emotionally realistic, culturally aware, scene-coherent AI outputs with DHLL." />
+  <meta property="og:image" content="/gyrilogic-logo.png" />
+  <meta property="og:url" content="https://your-site.example" />
+
+  {/* Twitter */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Gyrilogic — Default Human Logic Layer" />
+  <meta name="twitter:description" content="Emotionally realistic, culturally aware, scene-coherent AI outputs with DHLL." />
+  <meta name="twitter:image" content="/gyrilogic-logo.png" />
+</Head>
+
+<Header />
     <div style={{maxWidth:1100,margin:'40px auto',padding:16,fontFamily:'Inter,system-ui,Arial,sans-serif'}}>
-      {/* ANCHOR: HEADER-WITH-LOGO-START */}
-<div style={{display:'flex', alignItems:'center', gap:12}}>
-  <Image
-    src="/gyrilogic-logo.png"
-    alt="Gyrilogic logo"
-    width={160}
-    height={64}
-    style={{ borderRadius: 8, height: 'auto', width: 'auto', maxWidth: '40vw' }}
-    priority
-  />
-  <h1 style={{margin:0}}>Gyrilogic — Default Human Logic Layer (Public)</h1>
-</div>
-
-<div style={{display:'flex', gap:12, marginTop:8, marginBottom:12}}>
-  <button
-    style={{
-      padding:'6px 12px',
-      borderRadius:8,
-      border:'1px solid var(--gyr-border)',
-      color:'var(--gyr-fg)',
-      background:'transparent'
-    }}
-    onClick={()=>alert('Access panel TBD')}
-  >
-    Access
-  </button>
-
-  <button
-    style={{
-      padding:'6px 12px',
-      borderRadius:8,
-      border:'1px solid var(--gyr-border)',
-      color:'var(--gyr-fg)',
-      background:'transparent'
-    }}
-    onClick={()=>alert('API panel TBD')}
-  >
-    API
-  </button>
-
-  {/* NAV-LINK-HOME-START */}
-  <Link
-    href="/"
-    style={{
-      padding:'6px 12px',
-      borderRadius:8,
-      border:'1px solid var(--gyr-border)',
-      color:'var(--gyr-fg)',
-      background:'transparent',
-      textDecoration:'none',
-      cursor:'pointer'
-    }}
-    onMouseOver={e => e.currentTarget.style.background = '#1e293b'}
-    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-  >
-    Home
-  </Link>
-  {/* NAV-LINK-HOME-END */}
-
-  {/* NAV-LINK-ABOUT-START */}
-  <Link
-    href="/about"
-    style={{
-      padding:'6px 12px',
-      borderRadius:8,
-      border:'1px solid var(--gyr-border)',
-      color:'var(--gyr-fg)',
-      background:'transparent',
-      textDecoration:'none',
-      cursor:'pointer'
-    }}
-    onMouseOver={e => e.currentTarget.style.background = '#1e293b'}
-    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-  >
-    About
-  </Link>
-  {/* NAV-LINK-ABOUT-END */}
-
-  <span
-    style={{
-      padding:'6px 12px',
-      borderRadius:8,
-      background:'#e5fbe5',
-      color:'#065f46',
-      fontWeight:600
-    }}
-  >
-    Free Mode ●
-  </span>
-  {/* Later this can toggle to Pro and show green dot when active */}
-</div>
-{/* ANCHOR: HEADER-WITH-LOGO-END */}
 
       <p style={{ margin:'8px 0 12px', opacity:0.85 }}>
   For quick demos. <span style={{opacity:0.7}}>No login required.</span>

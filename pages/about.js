@@ -1,64 +1,30 @@
-import Link from 'next/link';
-import Image from 'next/image';
+import Head from 'next/head';
+import Header from '../components/Header';
 
 export default function About() {
   return (
     <>
-      {/* HEADER-BLOCK-START */}
-      <div style={{maxWidth:1100, margin:'24px auto 8px', padding:16, fontFamily:'Inter,system-ui,Arial,sans-serif'}}>
-        <div style={{display:'flex', alignItems:'center', gap:12}}>
-          <Image
-            src="/gyrilogic-logo.png"
-            alt="Gyrilogic logo"
-            width={160}
-            height={64}
-            priority
-            style={{ borderRadius: 8, height: 'auto', width: 'auto', maxWidth: '40vw' }}
-          />
-          <h1 style={{margin:0, color:'#0b1220'}}>Gyrilogic — Default Human Logic Layer (Public)</h1>
-        </div>
+<Head>
+  <title>About — Gyrilogic</title>
+  <meta name="description" content="Learn what Gyrilogic is, how the Default Human Logic Layer (DHLL) works, and why it makes AI outputs feel human-aware." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b2149" />
 
-        <div style={{display:'flex', gap:12, marginTop:8, marginBottom:12}}>
-          {/* NAV-LINK-HOME-START */}
-          <Link
-            href="/"
-            style={{
-              padding:'6px 12px',
-              borderRadius:8,
-              border:'1px solid #334155',
-              color:'#0b1220',
-              background:'transparent',
-              textDecoration:'none',
-              cursor:'pointer'
-            }}
-            onMouseOver={e => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-          >
-            Home
-          </Link>
-          {/* NAV-LINK-HOME-END */}
+  {/* OpenGraph */}
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="About — Gyrilogic" />
+  <meta property="og:description" content="What Gyrilogic does and how DHLL adds emotional realism, cultural awareness, and scene coherence." />
+  <meta property="og:image" content="/gyrilogic-logo.png" />
+  <meta property="og:url" content="https://your-site.example/about" />
 
-          {/* NAV-LINK-ABOUT-START */}
-          <Link
-            href="/about"
-            style={{
-              padding:'6px 12px',
-              borderRadius:8,
-              border:'1px solid #334155',
-              color:'#0b1220',
-              background:'transparent',
-              textDecoration:'none',
-              cursor:'pointer'
-            }}
-            onMouseOver={e => e.currentTarget.style.background = '#e5e7eb'}
-            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-          >
-            About
-          </Link>
-          {/* NAV-LINK-ABOUT-END */}
-        </div>
-      </div>
-      {/* HEADER-BLOCK-END */}
+  {/* Twitter */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="About — Gyrilogic" />
+  <meta name="twitter:description" content="What Gyrilogic does and how DHLL adds emotional realism, cultural awareness, and scene coherence." />
+  <meta name="twitter:image" content="/gyrilogic-logo.png" />
+</Head>
+
+      <Header />
 
       <div className="max-w-3xl mx-auto p-8 space-y-8 text-slate-800">
         <h1 className="text-3xl font-bold">About Gyrilogic</h1>
