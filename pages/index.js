@@ -1,5 +1,5 @@
 // ANCHOR: DHLL-APP-FILE — CLEANED
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Head from 'next/head';
 import Header from '../components/Header';
 
@@ -201,12 +201,72 @@ const [enhanced,setEnhanced]=useState(null);
 const [, setPolicy] = useState(null);
 const [, setAudit] = useState([]);
 const [error,setError]=useState(null);
+  const inputRef = useRef(null);
 
   const options = useMemo(()=>({ tone, environment: circumstances, dhll_mode: mode }),[tone, circumstances, mode]);
 
   function toggleCirc(tag){
     setCircumstances(prev => prev.includes(tag) ? prev.filter(t=>t!==tag) : [...prev, tag]);
   }
+
+  // Caret-aware insertion + paste
+  function insertAtCaret(textareaEl, insertText) {
+  if (!textareaEl) return;
+
+  // Use the element's live value (avoids stale state issues)
+  const val = textareaEl.value ?? '';
+  const start = typeof textareaEl.selectionStart === 'number' ? textareaEl.selectionStart : val.length;
+  const end   = typeof textareaEl.selectionEnd   === 'number' ? textareaEl.selectionEnd   : val.length;
+
+  const before = val.slice(0, start);
+  const after  = val.slice(end);
+  const next   = before + insertText + after;
+
+  setText(next);
+
+  // Restore caret just after the inserted text
+  const pos = start + insertText.length;
+  requestAnimationFrame(() => {
+    try {
+      textareaEl.focus();
+      textareaEl.setSelectionRange(pos, pos);
+    } catch {}
+  });
+}
+
+async function pasteFromClipboard() {
+  const el = inputRef.current;
+  if (!el) return;
+
+  // First try the modern Clipboard API (requires secure context and permission)
+  try {
+    // Optional permission check (not supported everywhere)
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'clipboard-read' });
+        if (perm.state === 'denied') throw new Error('clipboard-read denied');
+      } catch {
+        // Ignore permission query failures; we'll still try readText
+      }
+    }
+
+    if (navigator.clipboard && window.isSecureContext !== false) {
+      const t = await navigator.clipboard.readText();
+      if (typeof t === 'string' && t.length) {
+        insertAtCaret(el, t);
+        return;
+      }
+      // If empty, fall through to manual fallback
+    }
+    throw new Error('readText unavailable or empty');
+  } catch {
+    // Manual fallback: ask user to paste into a prompt, then insert at caret
+    const manual = window.prompt('Clipboard access is restricted. Paste your text here, then press OK:', '');
+    if (typeof manual === 'string' && manual.length) {
+      insertAtCaret(el, manual);
+    }
+  }
+}
 
   // Auto-detect circumstances from text
   useEffect(()=>{
@@ -392,12 +452,41 @@ const [error,setError]=useState(null);
   boxShadow:'0 1px 2px rgba(0,0,0,0.04)',
   overflow:'hidden'
 }}>
-  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
     <h3 style={{margin:0}}>Input</h3>
-    <small style={{opacity:0.7}}>Tip: <b>Ctrl+Enter</b> runs Enhance</small>
+
+    {/* tiny toolbar */}
+    <div role="toolbar" aria-label="Input actions" style={{display:'flex', gap:8, alignItems:'center'}}>
+      <small style={{opacity:0.7}}>Tip: <b>Ctrl+Enter</b> runs Enhance</small>
+
+      <button
+        onClick={pasteFromClipboard}
+        style={{padding:'6px 10px'}}
+        aria-label="Paste from clipboard"
+        title="Paste from clipboard"
+      >
+        Paste
+      </button>
+
+      <button
+        onClick={()=>{
+          setText('');
+          setEnhanced(null); // also clear the output/result
+          setError(null);    // optional: clear any error message
+        }}
+        disabled={loading || !text}
+        style={{padding:'6px 10px'}}
+        aria-label="Clear input and result"
+        title="Clear input and result"
+      >
+        Clear
+      </button>
+    </div>
   </div>
 
-  <textarea
+    <textarea
+    id="dhll-input"
+    ref={inputRef}
     placeholder="Write or paste text here (e.g., 'Wedding toast at sunset, elegant and warm')"
     value={text}
     onChange={e=>setText(e.target.value)}
@@ -501,9 +590,6 @@ const [error,setError]=useState(null);
         <div style={{display:'flex',gap:10,alignItems:'center'}}>
           <button onClick={runEnhance} disabled={loading} style={{padding:'10px 16px'}}>
             {loading ? 'Running…' : 'Enhance'}
-          </button>
-          <button onClick={()=>setText('')} disabled={loading} style={{padding:'8px 12px'}}>
-            Clear
           </button>
         </div>
       </section>
